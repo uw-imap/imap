@@ -73,7 +73,7 @@ SSLRSA= # -lRSAglue -lrsaref
 
 SSLCFLAGS= -I$(SSLINCLUDE) -I$(SSLINCLUDE)/openssl\
  -DSSL_CERT_DIRECTORY=\"$(SSLCERTS)\" -DSSL_KEY_DIRECTORY=\"$(SSLKEYS)\"
-SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA)
+SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA) $(EXTRALDFLAGS)
 
 
 # Extended flags needed for non-standard passwd types.  You may need to modify.
@@ -498,7 +498,7 @@ lnp:	# Linux Pluggable Authentication modules
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
 	 BASECFLAGS="$(GCCCFLAGS)" \
-	 BASELDFLAGS="$(PAMLDFLAGS)"
+	 BASELDFLAGS="$(EXTRALDFLAGS) $(PAMLDFLAGS)"
 
 lnx:	# Linux non-shadow passwords
 	@echo You are building for traditional Linux *without* shadow
