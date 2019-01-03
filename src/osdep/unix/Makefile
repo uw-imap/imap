@@ -96,11 +96,11 @@ CHECKPW=std
 LOGINPW=std
 SIGTYPE=bsd
 CRXTYPE=std
-ACTIVEFILE=/usr/lib/news/active
-SPOOLDIR=/usr/spool
+ACTIVEFILE=/var/lib/news/active
+SPOOLDIR=/var/spool
 MAILSPOOL=$(SPOOLDIR)/mail
 NEWSSPOOL=$(SPOOLDIR)/news
-RSHPATH=/usr/ucb/rsh
+RSHPATH=/usr/bin/rsh
 MD5PWD=/etc/cram-md5.pwd
 # Tries one of the test alternatives below if not specified.
 LOCKPGM=
