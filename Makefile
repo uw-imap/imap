@@ -669,6 +669,8 @@ an ua:
 	$(TOOLS)/$@ "$(LN)" src/ansilib c-client
 	$(TOOLS)/$@ "$(LN)" src/charset c-client
 	$(TOOLS)/$@ "$(LN)" src/osdep/$(SYSTEM) c-client
+	cp -alf /usr/include/imap/* c-client/
+	#sleep 5
 	$(TOOLS)/$@ "$(LN)" src/mtest mtest
 	$(TOOLS)/$@ "$(LN)" src/ipopd ipopd
 	$(TOOLS)/$@ "$(LN)" src/imapd imapd
