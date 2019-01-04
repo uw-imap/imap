@@ -73,7 +73,7 @@ SSLRSA= # -lRSAglue -lrsaref
 
 SSLCFLAGS= -I$(SSLINCLUDE) -I$(SSLINCLUDE)/openssl\
  -DSSL_CERT_DIRECTORY=\"$(SSLCERTS)\" -DSSL_KEY_DIRECTORY=\"$(SSLKEYS)\"
-SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA)
+SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA) $(EXTRALDFLAGS)
 
 
 # Extended flags needed for non-standard passwd types.  You may need to modify.
@@ -96,11 +96,11 @@ CHECKPW=std
 LOGINPW=std
 SIGTYPE=bsd
 CRXTYPE=std
-ACTIVEFILE=/usr/lib/news/active
-SPOOLDIR=/usr/spool
+ACTIVEFILE=/var/lib/news/active
+SPOOLDIR=/var/spool
 MAILSPOOL=$(SPOOLDIR)/mail
 NEWSSPOOL=$(SPOOLDIR)/news
-RSHPATH=/usr/ucb/rsh
+RSHPATH=/usr/bin/rsh
 MD5PWD=/etc/cram-md5.pwd
 # Tries one of the test alternatives below if not specified.
 LOCKPGM=
@@ -169,6 +169,10 @@ BUILD=$(MAKE) build EXTRACFLAGS='$(EXTRACFLAGS)'\
  EXTRALDFLAGS='$(EXTRALDFLAGS)'\
  EXTRADRIVERS='$(EXTRADRIVERS)' EXTRAAUTHENTICATORS='$(EXTRAAUTHENTICATORS)'\
  PASSWDTYPE=$(PASSWDTYPE) SSLTYPE=$(SSLTYPE) IP=$(IP)
+
+# Need this for the shared library rule to work correctly
+.SUFFIXES: .o .so
+SOFILES=${BINARIES:.o=.so}
 
 
 # Here if no make argument established
@@ -498,7 +502,7 @@ lnp:	# Linux Pluggable Authentication modules
 	 ACTIVEFILE=/var/lib/news/active \
 	 RSHPATH=/usr/bin/rsh \
 	 BASECFLAGS="$(GCCCFLAGS)" \
-	 BASELDFLAGS="$(PAMLDFLAGS)"
+	 BASELDFLAGS="$(EXTRALDFLAGS) $(PAMLDFLAGS)"
 
 lnx:	# Linux non-shadow passwords
 	@echo You are building for traditional Linux *without* shadow
@@ -853,18 +857,24 @@ vu2:	# VAX Ultrix 2.3, etc.
 
 # Build it!
 
-build:	clean once $(ARCHIVE)
+build:	clean once $(ARCHIVE) $(SHLIBNAME)
 
-all:	$(ARCHIVE)
+all:	$(ARCHIVE) $(SHLIBNAME)
 
 $(ARCHIVE): $(BINARIES)
 	sh -c '$(RM) $(ARCHIVE) || true'
 	@$(CAT) ARCHIVE
 	@$(SH) ARCHIVE
 
-.c.o:
-	`$(CAT) CCTYPE` -c `$(CAT) CFLAGS` $*.c
+$(SHLIBNAME):	$(SOFILES)
+	gcc -shared -Wl,-soname,$(SHLIBNAME) -o $(SHLIBNAME) $(SOFILES) `cat LDFLAGS`
+	ln -s $(SHLIBNAME) lib$(SHLIBBASE).so
 
+.c.so:	osdep.h
+	$(CC) -fPIC -DPIC -D_REENTRANT -c `$(CAT) CFLAGS` ${@:.so=.c} -o $@
+
+.c.o:
+	$(CC) -fPIC -DPIC -D_REENTRANT -c `$(CAT) CFLAGS` $*.c
 
 # Cleanup
 
@@ -903,8 +913,7 @@ utf8aux.o: mail.h misc.h osdep.h utf8.h
 
 
 # OS-dependent
-
-osdep.o:mail.h misc.h env.h fs.h ftl.h nl.h tcp.h \
+OSDEPS= mail.h misc.h env.h fs.h ftl.h nl.h tcp.h \
 	osdep.h env_unix.h tcp_unix.h \
 	osdep.c env_unix.c fs_unix.c ftl_unix.c nl_unix.c tcp_unix.c ip_unix.c\
 	auths.c crexcl.c flockcyg.c flocklnx.c flocksim.c fsync.c \
@@ -918,12 +927,19 @@ osdep.o:mail.h misc.h env.h fs.h ftl.h nl.h tcp.h \
 	write.c sslstdio.c \
 	strerror.c strpbrk.c strstr.c strtok.c strtoul.c \
 	OSCFLAGS
+
+osdep.o:	$(OSDEPS)
+	$(CC) -fPIC -DPIC -D_REENTRANT `$(CAT) CFLAGS` `$(CAT) OSCFLAGS` -c osdep.c
+	@echo ========================================================================
 	@echo Building OS-dependent module
 	@echo If you get No such file error messages for files x509.h, ssl.h,
 	@echo pem.h, buffer.h, bio.h, and crypto.h, that means that OpenSSL
 	@echo is not installed on your system.  Either install OpenSSL first
 	@echo or build with command: make `$(CAT) OSTYPE` SSLTYPE=none
-	`$(CAT) CCTYPE` -c `$(CAT) CFLAGS` `$(CAT) OSCFLAGS` -c osdep.c
+	@echo ========================================================================
+
+osdep.so:	$(OSDEPS)
+	$(CC) -fPIC -DPIC -D_REENTRANT `$(CAT) CFLAGS` `cat OSCFLAGS` -c osdep.c -o $@
 
 osdep.c: osdepbas.c osdepckp.c osdeplog.c osdepssl.c
 	$(CAT) osdepbas.c osdepckp.c osdeplog.c osdepssl.c > osdep.c

@@ -384,6 +384,9 @@ void rfc822_parse_content (BODY *body,STRING *bs,char *h,unsigned long depth,
 	if (CHR (bs) == '\012'){/* following LF? */
 	  c = SNX (bs); i--;	/* yes, slurp it */
 	}
+	if (!i)			/* Make sure we don't get an overflow for */
+	  break;		/* messages ending on \015 (or the following */
+				/* i-- will cause i to be MAXINT. Not good.) */
       case '\012':		/* at start of a line, start with -- ? */
 	if (!(i && i-- && ((c = SNX (bs)) == '-') && i-- &&
 	      ((c = SNX (bs)) == '-'))) break;

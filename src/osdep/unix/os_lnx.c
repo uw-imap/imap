@@ -41,6 +41,7 @@
 extern int errno;		/* just in case */
 #include <pwd.h>
 #include "misc.h"
+#include <poll.h>
 
 
 #include "fs_unix.c"
